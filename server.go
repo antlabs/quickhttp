@@ -9,6 +9,8 @@ type RequestHandler func(ctx *RequestCtx)
 
 type Server struct {
 	Handler RequestHandler
+
+	Name string //服务名
 }
 
 var bytesBody = []byte("HTTP/1.1 200 OK \r\nContent-Length: 0\r\n\r\n")

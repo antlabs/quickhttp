@@ -1,22 +1,16 @@
 package quickhttp
 
 import (
-	"net/http"
-
 	"github.com/antlabs/httparser"
 )
 
 type RequestCtx struct {
-	parser     *httparser.Parser
-	setting    *httparser.Setting
-	lastHeader string
-	finished   bool
-	buf        *[]byte
-	bodyStart  int
-	bodyEnd    int
+	parser    *httparser.Parser
+	setting   *httparser.Setting
+	buf       *[]byte
+	bodyStart int
+	bodyEnd   int
 }
-
-var emptyRequest = http.Request{}
 
 func newRequestCtx() *RequestCtx {
 
