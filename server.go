@@ -19,7 +19,6 @@ func (s *Server) serve(c net.Conn) {
 	r := newRequestCtx()
 	defer c.Close()
 	for {
-		// buf := GetBytes(1024)
 		n, err := c.Read(*r.buf)
 		if err != nil {
 			fmt.Printf("%v\n", err)

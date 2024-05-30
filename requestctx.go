@@ -1,15 +1,22 @@
 package quickhttp
 
 import (
+	"net"
+
 	"github.com/antlabs/httparser"
 )
 
 type RequestCtx struct {
-	parser    *httparser.Parser
-	setting   *httparser.Setting
-	buf       *[]byte
-	bodyStart int
-	bodyEnd   int
+	parser  *httparser.Parser
+	setting *httparser.Setting
+	buf     *[]byte // header+小body, 或者header
+
+	Request Request
+
+	// Outgoing response.
+	//
+	// Copying Response by value is forbidden. Use pointer to Response instead.
+	Response Response
 }
 
 func newRequestCtx() *RequestCtx {
@@ -20,51 +27,67 @@ func newRequestCtx() *RequestCtx {
 		// buffer:  make([]byte, 1024),
 		// request: &http.Request{},
 	}
-	r.buf = buf
 
 	r.buf = buf
 	r.setting = &httparser.Setting{
-		MessageBegin: func(p *httparser.Parser) {
+		MessageBegin: func(p *httparser.Parser, pos int) {
 		},
-		URL: func(p *httparser.Parser, buf []byte) {
-			//url数据
-			//fmt.Printf("url->%s\n", buf)
-			// hConn.request.RequestURI = string(buf)
+		URL: func(p *httparser.Parser, buf []byte, pos int) {
 		},
-		Status: func(p *httparser.Parser, buf []byte) {
-			// 响应包才需要用到
+		Status: func(p *httparser.Parser, buf []byte, pos int) {
 		},
-		HeaderField: func(p *httparser.Parser, buf []byte) {
-			// http header field
-			// fmt.Printf("header field:%s\n", buf)
-			// hConn.lastHeader = string(buf)
+		HeaderField: func(p *httparser.Parser, buf []byte, pos int) {
 		},
-		HeaderValue: func(p *httparser.Parser, buf []byte) {
-			// http header value
-			//fmt.Printf("header value:%s\n", buf)
-			// if "Host" == hConn.lastHeader {
-			// 	hConn.request.Host = string(buf)
-			// } else {
-			// 	hConn.request.Header.Add(hConn.lastHeader, string(buf))
-			// }
-			// hConn.lastHeader = ""
+		HeaderValue: func(p *httparser.Parser, buf []byte, pos int) {
 		},
 		HeadersComplete: func(p *httparser.Parser, pos int) {
-			r.bodyStart = pos
+			r.Request.bodyStart = pos
 		},
 		Body: func(p *httparser.Parser, buf []byte, pos int) {
-			r.bodyEnd = pos
+			r.Request.bodyEnd = pos
 		},
 		MessageComplete: func(p *httparser.Parser, pos int) {
-			r.bodyEnd = pos
+			r.Request.bodyEnd = pos
 		},
 	}
 
 	return r
 }
 
+func (r *RequestCtx) Method() []byte {
+	if len(r.Request.Header.method) == 0 {
+		r.Request.Header.method = str2bytes(r.parser.Method.String())
+	}
+	return r.Request.Header.method
+}
+
 func (r *RequestCtx) PostBody() []byte {
-	return (*r.buf)[r.bodyStart:r.bodyEnd]
+	return (*r.buf)[r.Request.bodyStart:r.Request.bodyEnd]
+}
+
+func (r *RequestCtx) RequestURI() []byte {
+
+	return nil
+}
+
+func (r *RequestCtx) Path() []byte {
+	return nil
+}
+
+func (r *RequestCtx) Host() []byte {
+	return nil
+}
+
+func (r *RequestCtx) QueryArgs() []byte {
+	return nil
+}
+
+func (r *RequestCtx) UserAgent() []byte {
+	return nil
+}
+
+func (r *RequestCtx) RemoteIP() net.IP {
+	return nil
 }
 
 func (r *RequestCtx) execute() (bool, error) {
