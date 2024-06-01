@@ -1,6 +1,9 @@
 package quickhttp
 
-import "net/http"
+import (
+	"net/http"
+	"strconv"
+)
 
 const (
 	HeaderServer = "Server"
@@ -11,11 +14,20 @@ type RequestHeader struct {
 }
 
 type ResponseHeader struct {
-	statusCode    int
-	statusMessage string
-	server        []byte
-	protocol      string
-	Request       Request
+	statusCode         int
+	statusMessage      string
+	server             []byte
+	protocol           string
+	contentLength      int
+	contentLengthBytes []byte
+}
+
+func (h *ResponseHeader) Server() []byte {
+	return h.server
+}
+
+func (h *ResponseHeader) SetServer(server string) {
+	h.server = append(h.server[:0], server...)
 }
 
 func (h *ResponseHeader) StatusCode() int {
@@ -44,10 +56,6 @@ func (h *ResponseHeader) Protocol() string {
 	return strHTTP11
 }
 
-func (h *ResponseHeader) Server() []byte {
-	return h.server
-}
-
 func (h *ResponseHeader) appendStatusLine(dst *[]byte) {
 	statusCode := h.StatusCode()
 	if statusCode < 0 {
@@ -56,12 +64,25 @@ func (h *ResponseHeader) appendStatusLine(dst *[]byte) {
 	formatStatusLine(dst, h.Protocol(), statusCode, h.StatusMessage())
 }
 
+func (h *ResponseHeader) SetContentLength(contentLength int) {
+	h.contentLength = contentLength
+	if cap(h.contentLengthBytes) == 0 {
+		h.contentLengthBytes = make([]byte, 20)
+	}
+	h.contentLengthBytes = h.contentLengthBytes[:0]
+	h.contentLengthBytes = strconv.AppendInt(h.contentLengthBytes, int64(contentLength), 10)
+}
+
 func (h *ResponseHeader) AppendBytes(dst *[]byte) {
 	h.appendStatusLine(dst)
 
 	server := h.Server()
 	if len(server) != 0 {
 		appendHeaderLine(dst, bytesServer, server)
+	}
+
+	if len(h.contentLengthBytes) > 0 {
+		appendHeaderLine(dst, bytesContentLength, h.contentLengthBytes)
 	}
 
 	*dst = append(*dst, bytesCRLF...)

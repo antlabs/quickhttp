@@ -16,33 +16,35 @@ type Server struct {
 // var bytesBody = []byte("HTTP/1.1 200 OK \r\nContent-Length: 0\r\n\r\n")
 
 func (s *Server) serve(c net.Conn) {
-	r := newRequestCtx()
+	ctx := newRequestCtx()
 	defer c.Close()
 	for {
-		n, err := c.Read(*r.buf)
+		n, err := c.Read(*ctx.buf)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			return
 		}
-		*r.buf = (*r.buf)[:n]
-		sucess, err := r.execute()
+		*ctx.buf = (*ctx.buf)[:n]
+		sucess, err := ctx.execute()
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			return
 		}
 		if sucess {
-			*r.buf = (*r.buf)[:cap(*r.buf)]
-			s.Handler(r)
+			*ctx.buf = (*ctx.buf)[:cap(*ctx.buf)]
+			s.Handler(ctx)
 			wbuf := GetBytes(1024)
 			oldwbuf := wbuf
 
 			*wbuf = (*wbuf)[:0]
 
-			r.Response.Header.AppendBytes(wbuf)
+			ctx.Response.Header.SetServer(defaultServerName)
+			ctx.Response.Header.SetContentLength(0)
+			ctx.Response.Header.AppendBytes(wbuf)
 			c.Write(*wbuf)
 			PutBytes(oldwbuf)
 			//TODO 检查下
-			r.parser.Reset()
+			ctx.parser.Reset()
 		}
 	}
 }
