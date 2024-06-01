@@ -70,7 +70,11 @@ func (h *ResponseHeader) SetContentLength(contentLength int) {
 		h.contentLengthBytes = make([]byte, 20)
 	}
 	h.contentLengthBytes = h.contentLengthBytes[:0]
-	h.contentLengthBytes = strconv.AppendInt(h.contentLengthBytes, int64(contentLength), 10)
+	if contentLength >= 0 && contentLength <= 9 {
+		h.contentLengthBytes = append(h.contentLengthBytes, '0'+byte(contentLength))
+	} else {
+		h.contentLengthBytes = strconv.AppendInt(h.contentLengthBytes, int64(contentLength), 10)
+	}
 }
 
 func (h *ResponseHeader) AppendBytes(dst *[]byte) {
