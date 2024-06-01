@@ -13,7 +13,7 @@ type Server struct {
 	Name string //服务名
 }
 
-var bytesBody = []byte("HTTP/1.1 200 OK \r\nContent-Length: 0\r\n\r\n")
+// var bytesBody = []byte("HTTP/1.1 200 OK \r\nContent-Length: 0\r\n\r\n")
 
 func (s *Server) serve(c net.Conn) {
 	r := newRequestCtx()
@@ -33,7 +33,15 @@ func (s *Server) serve(c net.Conn) {
 		if sucess {
 			*r.buf = (*r.buf)[:cap(*r.buf)]
 			s.Handler(r)
-			c.Write(bytesBody)
+			wbuf := GetBytes(1024)
+			oldwbuf := wbuf
+
+			*wbuf = (*wbuf)[:0]
+
+			r.Response.Header.AppendBytes(wbuf)
+			c.Write(*wbuf)
+			PutBytes(oldwbuf)
+			//TODO 检查下
 			r.parser.Reset()
 		}
 	}
