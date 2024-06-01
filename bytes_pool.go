@@ -56,6 +56,12 @@ func selectIndex(n int) int {
 	return index
 }
 
+func GetAndResetBytes(n int) (rv *[]byte) {
+	rv = GetBytes(n)
+	*rv = (*rv)[:0]
+	return rv
+}
+
 func GetBytes(n int) (rv *[]byte) {
 	if n <= page {
 		rv = pools[0].Get().(*[]byte)

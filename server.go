@@ -32,17 +32,13 @@ func (s *Server) serve(c net.Conn) {
 		}
 		if sucess {
 			*ctx.buf = (*ctx.buf)[:cap(*ctx.buf)]
-			s.Handler(ctx)
-			wbuf := GetBytes(1024)
-			oldwbuf := wbuf
-
-			*wbuf = (*wbuf)[:0]
-
 			ctx.Response.Header.SetServer(defaultServerName)
-			ctx.Response.Header.SetContentLength(0)
-			ctx.Response.Header.AppendBytes(wbuf)
-			c.Write(*wbuf)
-			PutBytes(oldwbuf)
+			s.Handler(ctx)
+
+			ctx.Response.init()
+
+			ctx.write(c)
+			ctx.Response.free()
 			//TODO 检查下
 			ctx.parser.Reset()
 		}

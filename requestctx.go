@@ -1,6 +1,7 @@
 package quickhttp
 
 import (
+	"io"
 	"net"
 
 	"github.com/antlabs/httparser"
@@ -93,4 +94,8 @@ func (r *RequestCtx) RemoteIP() net.IP {
 func (r *RequestCtx) execute() (bool, error) {
 	_, err := r.parser.Execute(r.setting, *r.buf)
 	return r.parser.EOF(), err
+}
+
+func (r *RequestCtx) write(w io.Writer) error {
+	return r.Response.Write(w)
 }
