@@ -1,6 +1,8 @@
 package quickhttp
 
-import "io"
+import (
+	"io"
+)
 
 type Response struct {
 	Header        ResponseHeader
@@ -26,15 +28,33 @@ func (r *Response) AppendBody(p []byte) {
 	*r.bodyRaw = append(*r.bodyRaw, p...)
 }
 
+func (r *Response) reset() {
+	if r.headerRaw != nil {
+		PutBytes(r.headerRaw)
+		r.headerRaw = nil
+	}
+
+	if r.backHeaderRaw != nil {
+		r.backHeaderRaw = nil
+	}
+	if r.bodyRaw != nil {
+		PutBytes(r.bodyRaw)
+		r.bodyRaw = nil
+	}
+}
+
 func (r *Response) init() {
-	r.headerRaw = GetAndResetBytes(1024)
-	r.backHeaderRaw = r.backHeaderRaw
+	if r.headerRaw == nil {
+
+		r.headerRaw = GetAndResetBytes(1024)
+	}
+	r.backHeaderRaw = r.headerRaw
 }
 
 func (r *Response) free() {
-	PutBytes(r.headerRaw)
-
+	r.reset()
 }
+
 func (r *Response) Write(w io.Writer) error {
 	contentLength := 0
 	if r.bodyRaw != nil && len(*r.bodyRaw) > 0 {
@@ -42,15 +62,16 @@ func (r *Response) Write(w io.Writer) error {
 	}
 	r.Header.SetContentLength(contentLength)
 
-	r.Header.AppendBytes(r.bodyRaw)
+	r.Header.AppendBytes(r.headerRaw)
 
 	if r.bodyRaw == nil || len(*r.bodyRaw) == 0 {
+		// 只有header数据
 		w.Write(*r.headerRaw)
 	} else {
+		// 有header数据和body数据
 		mergeBody := GetAndResetBytes(len(*r.bodyRaw) + len(*r.headerRaw) + 2)
-		copy(*mergeBody, *r.headerRaw)
-		copy(*mergeBody, *r.bodyRaw)
-		*mergeBody = append(*mergeBody, bytesCRLF...)
+		*mergeBody = append(*mergeBody, *r.headerRaw...)
+		*mergeBody = append(*mergeBody, *r.bodyRaw...)
 
 		w.Write(*mergeBody)
 		PutBytes(mergeBody)

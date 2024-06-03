@@ -33,9 +33,9 @@ func (s *Server) serve(c net.Conn) {
 		if sucess {
 			*ctx.buf = (*ctx.buf)[:cap(*ctx.buf)]
 			ctx.Response.Header.SetServer(defaultServerName)
-			s.Handler(ctx)
-
 			ctx.Response.init()
+
+			s.Handler(ctx)
 
 			ctx.write(c)
 			ctx.Response.free()

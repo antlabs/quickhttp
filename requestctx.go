@@ -96,6 +96,11 @@ func (r *RequestCtx) execute() (bool, error) {
 	return r.parser.EOF(), err
 }
 
+func (r *RequestCtx) Write(p []byte) (int, error) {
+	r.Response.AppendBody(p)
+	return len(p), nil
+}
+
 func (r *RequestCtx) write(w io.Writer) error {
 	return r.Response.Write(w)
 }

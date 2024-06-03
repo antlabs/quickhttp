@@ -27,6 +27,7 @@ func stdMain() {
 
 // request handler in quickhttp style, i.e. just plain function.
 func quickHTTPHandler(ctx *quickhttp.RequestCtx) {
+	fmt.Fprintf(ctx, "Hello, world!\n\n")
 	// fmt.Printf("(%s)\n", ctx.PostBody())
 	// fmt.Fprintf(ctx, "Hi there! RequestURI is %q", ctx.RequestURI())
 }
@@ -35,6 +36,6 @@ func main() {
 
 	go stdMain()
 	// pass plain function to quickhttp
-	fmt.Printf("start quickhttp :8083")
+	fmt.Printf("start quickhttp :8083\n")
 	fmt.Println(quickhttp.ListenAndServe(":8083", quickHTTPHandler))
 }
