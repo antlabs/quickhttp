@@ -54,7 +54,6 @@ func (s *Server) Serve(ln net.Listener) error {
 		}
 		go s.serve(con)
 	}
-	return nil
 }
 
 func (s *Server) ListenAndServe(addr string) error {

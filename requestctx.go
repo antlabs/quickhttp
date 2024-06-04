@@ -8,16 +8,37 @@ import (
 )
 
 type RequestCtx struct {
-	parser  *httparser.Parser
-	setting *httparser.Setting
-	buf     *[]byte // header+小body, 或者header
+	parser     *httparser.Parser  // http 解析器
+	reqSetting *httparser.Setting // 状态回调函数
+	buf        *[]byte            // header+小body, 或者header
+	Request    Request            // 请求
+	Response   Response           // 响应
+}
 
-	Request Request
+var defaultRequestSetting = &httparser.Setting{
+	MessageBegin: func(p *httparser.Parser, pos int) {
+	},
+	URL: func(p *httparser.Parser, buf []byte, pos int) {
+	},
+	Status: func(p *httparser.Parser, buf []byte, pos int) {
+	},
+	HeaderField: func(p *httparser.Parser, buf []byte, pos int) {
+	},
+	HeaderValue: func(p *httparser.Parser, buf []byte, pos int) {
+	},
+	HeadersComplete: func(p *httparser.Parser, pos int) {
+		r := p.GetUserData().(*RequestCtx)
 
-	// Outgoing response.
-	//
-	// Copying Response by value is forbidden. Use pointer to Response instead.
-	Response Response
+		r.Request.bodyStart = pos
+	},
+	Body: func(p *httparser.Parser, buf []byte, pos int) {
+		r := p.GetUserData().(*RequestCtx)
+		r.Request.bodyEnd = pos
+	},
+	MessageComplete: func(p *httparser.Parser, pos int) {
+		r := p.GetUserData().(*RequestCtx)
+		r.Request.bodyEnd = pos
+	},
 }
 
 func newRequestCtx() *RequestCtx {
@@ -29,28 +50,9 @@ func newRequestCtx() *RequestCtx {
 		// request: &http.Request{},
 	}
 
+	r.parser.SetUserData(r)
+	r.reqSetting = defaultRequestSetting
 	r.buf = buf
-	r.setting = &httparser.Setting{
-		MessageBegin: func(p *httparser.Parser, pos int) {
-		},
-		URL: func(p *httparser.Parser, buf []byte, pos int) {
-		},
-		Status: func(p *httparser.Parser, buf []byte, pos int) {
-		},
-		HeaderField: func(p *httparser.Parser, buf []byte, pos int) {
-		},
-		HeaderValue: func(p *httparser.Parser, buf []byte, pos int) {
-		},
-		HeadersComplete: func(p *httparser.Parser, pos int) {
-			r.Request.bodyStart = pos
-		},
-		Body: func(p *httparser.Parser, buf []byte, pos int) {
-			r.Request.bodyEnd = pos
-		},
-		MessageComplete: func(p *httparser.Parser, pos int) {
-			r.Request.bodyEnd = pos
-		},
-	}
 
 	return r
 }
@@ -92,7 +94,7 @@ func (r *RequestCtx) RemoteIP() net.IP {
 }
 
 func (r *RequestCtx) execute() (bool, error) {
-	_, err := r.parser.Execute(r.setting, *r.buf)
+	_, err := r.parser.Execute(r.reqSetting, *r.buf)
 	return r.parser.EOF(), err
 }
 
