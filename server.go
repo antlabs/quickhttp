@@ -38,9 +38,7 @@ func (s *Server) serve(c net.Conn) {
 			s.Handler(ctx)
 
 			ctx.write(c)
-			ctx.Response.free()
-			//TODO 检查下
-			ctx.parser.Reset()
+			ctx.reset()
 		}
 	}
 }

@@ -51,7 +51,7 @@ func (r *Response) init() {
 	r.backHeaderRaw = r.headerRaw
 }
 
-func (r *Response) free() {
+func (r *Response) Reset() {
 	r.reset()
 }
 

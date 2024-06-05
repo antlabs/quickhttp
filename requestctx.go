@@ -29,6 +29,7 @@ var defaultRequestSetting = &httparser.Setting{
 	HeadersComplete: func(p *httparser.Parser, pos int) {
 		r := p.GetUserData().(*RequestCtx)
 
+		// r.Request.Header.method = append(r.Request.Header.method[:0], p.Method.String()...)
 		r.Request.bodyStart = pos
 	},
 	Body: func(p *httparser.Parser, buf []byte, pos int) {
@@ -57,52 +58,58 @@ func newRequestCtx() *RequestCtx {
 	return r
 }
 
-func (r *RequestCtx) Method() []byte {
-	if len(r.Request.Header.method) == 0 {
-		r.Request.Header.method = str2bytes(r.parser.Method.String())
+func (ctx *RequestCtx) Method() []byte {
+	if len(ctx.Request.Header.method) == 0 {
+		ctx.Request.Header.method = append(ctx.Request.Header.method[:0], ctx.parser.Method.String()...)
 	}
-	return r.Request.Header.method
+	return ctx.Request.Header.method
 }
 
-func (r *RequestCtx) PostBody() []byte {
-	return (*r.buf)[r.Request.bodyStart:r.Request.bodyEnd]
+func (ctx *RequestCtx) PostBody() []byte {
+	return (*ctx.buf)[ctx.Request.bodyStart:ctx.Request.bodyEnd]
 }
 
-func (r *RequestCtx) RequestURI() []byte {
+func (ctx *RequestCtx) RequestURI() []byte {
 
 	return nil
 }
 
-func (r *RequestCtx) Path() []byte {
+func (ctx *RequestCtx) Path() []byte {
 	return nil
 }
 
-func (r *RequestCtx) Host() []byte {
+func (ctx *RequestCtx) Host() []byte {
 	return nil
 }
 
-func (r *RequestCtx) QueryArgs() []byte {
+func (ctx *RequestCtx) QueryArgs() []byte {
 	return nil
 }
 
-func (r *RequestCtx) UserAgent() []byte {
+func (ctx *RequestCtx) UserAgent() []byte {
 	return nil
 }
 
-func (r *RequestCtx) RemoteIP() net.IP {
+func (ctx *RequestCtx) RemoteIP() net.IP {
 	return nil
 }
 
-func (r *RequestCtx) execute() (bool, error) {
-	_, err := r.parser.Execute(r.reqSetting, *r.buf)
-	return r.parser.EOF(), err
+func (ctx *RequestCtx) execute() (bool, error) {
+	_, err := ctx.parser.Execute(ctx.reqSetting, *ctx.buf)
+	return ctx.parser.EOF(), err
 }
 
-func (r *RequestCtx) Write(p []byte) (int, error) {
-	r.Response.AppendBody(p)
+func (ctx *RequestCtx) Write(p []byte) (int, error) {
+	ctx.Response.AppendBody(p)
 	return len(p), nil
 }
 
-func (r *RequestCtx) write(w io.Writer) error {
-	return r.Response.Write(w)
+func (ctx *RequestCtx) write(w io.Writer) error {
+	return ctx.Response.Write(w)
+}
+
+func (ctx *RequestCtx) reset() {
+	ctx.Request.Reset()
+	ctx.Response.Reset()
+	ctx.parser.Reset()
 }

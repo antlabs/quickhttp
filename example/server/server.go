@@ -28,6 +28,9 @@ func stdMain() {
 // request handler in quickhttp style, i.e. just plain function.
 func quickHTTPHandler(ctx *quickhttp.RequestCtx) {
 	fmt.Fprintf(ctx, "Hello, world!\n\n")
+	fmt.Fprintf(ctx, "Request method is %q\n", ctx.Method())
+	fmt.Fprintf(ctx, "RequestURI is %q\n", ctx.RequestURI())
+
 	ctx.Response.Header.Set("X-My-Header1", "my-header-value")
 	ctx.Response.Header.Set("X-My-Header1", "my-header-value1")
 	ctx.Response.Header.Set("X-My-Header2", "my-header-value2")

@@ -31,7 +31,7 @@ func init() {
 		j := i
 		pools = append(pools, sync.Pool{
 			New: func() interface{} {
-				buf := make([]byte, j*page)
+				buf := make([]byte, j*poolPage)
 				return &buf
 			},
 		})
@@ -39,7 +39,7 @@ func init() {
 }
 
 const (
-	page     = 1024
+	poolPage = 1024
 	maxIndex = 64
 )
 
@@ -52,7 +52,7 @@ var upgradeRespPool = sync.Pool{
 }
 
 func selectIndex(n int) int {
-	index := n / page
+	index := n / poolPage
 	return index
 }
 
@@ -63,7 +63,7 @@ func GetAndResetBytes(n int) (rv *[]byte) {
 }
 
 func GetBytes(n int) (rv *[]byte) {
-	if n <= page {
+	if n <= poolPage {
 		rv = pools[0].Get().(*[]byte)
 		*rv = (*rv)[:cap(*rv)]
 		return rv
@@ -86,13 +86,13 @@ func PutBytes(bytes *[]byte) {
 	if cap(*bytes) == 0 {
 		return
 	}
-	if cap(*bytes) < page {
+	if cap(*bytes) < poolPage {
 		return
 	}
 
 	newLen := cap(*bytes) - 1
 	index := selectIndex(newLen)
-	if (cap(*bytes))%page != 0 {
+	if (cap(*bytes))%poolPage != 0 {
 		index--
 		if index < 0 {
 			return

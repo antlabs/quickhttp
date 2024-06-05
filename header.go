@@ -18,6 +18,22 @@ type RequestHeader struct {
 	method []byte
 }
 
+func (h *RequestHeader) SetMethod(method string) {
+	h.method = append(h.method[:0], method...)
+}
+
+func (h *RequestHeader) SetMethodBytes(method []byte) {
+	h.method = append(h.method[:0], method...)
+}
+
+func (h *RequestHeader) Reset() {
+	h.resetSkipNormalize()
+}
+
+func (h *RequestHeader) resetSkipNormalize() {
+	h.method = h.method[:0]
+}
+
 type ResponseHeader struct {
 	noCopy
 

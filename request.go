@@ -5,3 +5,7 @@ type Request struct {
 	bodyStart int
 	bodyEnd   int
 }
+
+func (r *Request) Reset() {
+	r.Header.Reset()
+}
