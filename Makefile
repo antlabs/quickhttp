@@ -1,2 +1,2 @@
 all:
-	go build ./example/server/server.go
+	go build ./example/helloworld/helloworld.go

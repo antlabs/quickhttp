@@ -1,9 +1,8 @@
 package quickhttp
 
 type Request struct {
-	Header    RequestHeader
-	bodyStart int
-	bodyEnd   int
+	Header        RequestHeader
+	headerAndBody buf[int] //存在header和body
 }
 
 func (r *Request) Reset() {

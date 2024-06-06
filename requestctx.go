@@ -1,6 +1,7 @@
 package quickhttp
 
 import (
+	"bytes"
 	"io"
 	"net"
 
@@ -10,7 +11,6 @@ import (
 type RequestCtx struct {
 	parser     *httparser.Parser  // http 解析器
 	reqSetting *httparser.Setting // 状态回调函数
-	buf        *[]byte            // header+小body, 或者header
 	Request    Request            // 请求
 	Response   Response           // 响应
 }
@@ -19,43 +19,66 @@ var defaultRequestSetting = &httparser.Setting{
 	MessageBegin: func(p *httparser.Parser, pos int) {
 	},
 	URL: func(p *httparser.Parser, buf []byte, pos int) {
+		ctx := p.GetUserData().(*RequestCtx)
+		ctx.Request.Header.requestURI.setPosOrBytes(int32(pos-len(buf)), int32(pos), buf, 64)
 	},
 	Status: func(p *httparser.Parser, buf []byte, pos int) {
 	},
 	HeaderField: func(p *httparser.Parser, buf []byte, pos int) {
+		// fmt.Printf("###(%s)\n", buf)
+		ctx := p.GetUserData().(*RequestCtx)
+		switch buf[0] | 0x20 { // A-Z->a-z a-z->a-z
+		case 'h':
+			if bytes.EqualFold(buf, bytesHost) {
+				ctx.Request.Header.hState.set(findHost)
+			}
+
+		case 'u':
+			if bytes.EqualFold(buf, bytesUserAgent) {
+				ctx.Request.Header.hState.set(findUserAgent)
+			}
+		}
 	},
 	HeaderValue: func(p *httparser.Parser, buf []byte, pos int) {
+		ctx := p.GetUserData().(*RequestCtx)
+
+		if ctx.Request.Header.hState.is(findHost) {
+			ctx.Request.Header.host = append(ctx.Request.Header.host[:0], buf...)
+			ctx.Request.Header.hState.clear(findHost)
+		} else if ctx.Request.Header.hState.is(findUserAgent) {
+			ctx.Request.Header.userAgent = append(ctx.Request.Header.userAgent[:0], buf...)
+			ctx.Request.Header.hState.clear(findUserAgent)
+		}
 	},
 	HeadersComplete: func(p *httparser.Parser, pos int) {
-		r := p.GetUserData().(*RequestCtx)
+		ctx := p.GetUserData().(*RequestCtx)
 
 		// r.Request.Header.method = append(r.Request.Header.method[:0], p.Method.String()...)
-		r.Request.bodyStart = pos
+		ctx.Request.headerAndBody.start = pos
 	},
 	Body: func(p *httparser.Parser, buf []byte, pos int) {
-		r := p.GetUserData().(*RequestCtx)
-		r.Request.bodyEnd = pos
+		ctx := p.GetUserData().(*RequestCtx)
+		ctx.Request.headerAndBody.end = pos
 	},
 	MessageComplete: func(p *httparser.Parser, pos int) {
-		r := p.GetUserData().(*RequestCtx)
-		r.Request.bodyEnd = pos
+		ctx := p.GetUserData().(*RequestCtx)
+		ctx.Request.headerAndBody.end = pos
 	},
 }
 
 func newRequestCtx() *RequestCtx {
 
-	buf := GetBytes(1024)
-	r := &RequestCtx{
+	ctx := &RequestCtx{
 		parser: httparser.New(httparser.REQUEST),
 		// buffer:  make([]byte, 1024),
 		// request: &http.Request{},
 	}
 
-	r.parser.SetUserData(r)
-	r.reqSetting = defaultRequestSetting
-	r.buf = buf
+	ctx.parser.SetUserData(ctx)
+	ctx.Request.Header.setParent(&ctx.Request)
+	ctx.reqSetting = defaultRequestSetting
 
-	return r
+	return ctx
 }
 
 func (ctx *RequestCtx) Method() []byte {
@@ -66,12 +89,11 @@ func (ctx *RequestCtx) Method() []byte {
 }
 
 func (ctx *RequestCtx) PostBody() []byte {
-	return (*ctx.buf)[ctx.Request.bodyStart:ctx.Request.bodyEnd]
+	return ctx.Request.headerAndBody.getBytes(nil)
 }
 
 func (ctx *RequestCtx) RequestURI() []byte {
-
-	return nil
+	return ctx.Request.Header.RequestURI()
 }
 
 func (ctx *RequestCtx) Path() []byte {
@@ -79,7 +101,7 @@ func (ctx *RequestCtx) Path() []byte {
 }
 
 func (ctx *RequestCtx) Host() []byte {
-	return nil
+	return ctx.Request.Header.host
 }
 
 func (ctx *RequestCtx) QueryArgs() []byte {
@@ -87,7 +109,7 @@ func (ctx *RequestCtx) QueryArgs() []byte {
 }
 
 func (ctx *RequestCtx) UserAgent() []byte {
-	return nil
+	return ctx.Request.Header.userAgent
 }
 
 func (ctx *RequestCtx) RemoteIP() net.IP {
@@ -95,7 +117,7 @@ func (ctx *RequestCtx) RemoteIP() net.IP {
 }
 
 func (ctx *RequestCtx) execute() (bool, error) {
-	_, err := ctx.parser.Execute(ctx.reqSetting, *ctx.buf)
+	_, err := ctx.parser.Execute(ctx.reqSetting, *ctx.Request.headerAndBody.buf)
 	return ctx.parser.EOF(), err
 }
 

@@ -13,25 +13,26 @@ type Server struct {
 	Name string //服务名
 }
 
-// var bytesBody = []byte("HTTP/1.1 200 OK \r\nContent-Length: 0\r\n\r\n")
-
 func (s *Server) serve(c net.Conn) {
 	ctx := newRequestCtx()
 	defer c.Close()
+
+	ctx.Request.headerAndBody.resetBuf(GetBytes(1024))
+	buf := ctx.Request.headerAndBody.buf
 	for {
-		n, err := c.Read(*ctx.buf)
+		n, err := c.Read(*buf)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			return
 		}
-		*ctx.buf = (*ctx.buf)[:n]
+		*buf = (*buf)[:n]
 		sucess, err := ctx.execute()
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			return
 		}
 		if sucess {
-			*ctx.buf = (*ctx.buf)[:cap(*ctx.buf)]
+			*buf = (*buf)[:cap(*buf)]
 			ctx.Response.Header.SetServer(defaultServerName)
 			ctx.Response.init()
 

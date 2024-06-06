@@ -14,8 +14,36 @@ const (
 
 var ErrBadTrailer = errors.New("contain forbidden trailer")
 
+type headerState int32
+
+const (
+	findHost headerState = 1 << iota
+	findUserAgent
+)
+
+func (hs *headerState) set(v headerState) {
+	*hs |= v
+}
+
+func (hs *headerState) clear(v headerState) {
+	*hs &= ^v
+}
+
+func (hs *headerState) is(v headerState) bool {
+	return (*hs & v) > 0
+}
+
 type RequestHeader struct {
-	method []byte
+	parent     *Request
+	method     []byte
+	host       []byte
+	userAgent  []byte
+	hState     headerState
+	requestURI buf[int32] //uri有非常长的情况，所以使用buf结构存储
+}
+
+func (h *RequestHeader) setParent(r *Request) {
+	h.parent = r
 }
 
 func (h *RequestHeader) SetMethod(method string) {
@@ -28,6 +56,10 @@ func (h *RequestHeader) SetMethodBytes(method []byte) {
 
 func (h *RequestHeader) Reset() {
 	h.resetSkipNormalize()
+}
+
+func (h *RequestHeader) RequestURI() []byte {
+	return h.requestURI.getBytes(*h.parent.headerAndBody.buf)
 }
 
 func (h *RequestHeader) resetSkipNormalize() {
