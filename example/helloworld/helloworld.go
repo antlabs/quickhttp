@@ -32,6 +32,7 @@ func quickHTTPHandler(ctx *quickhttp.RequestCtx) {
 	fmt.Fprintf(ctx, "RequestURI is %q\n", ctx.RequestURI())
 	fmt.Fprintf(ctx, "Requested path is %q\n", ctx.Path())
 	fmt.Fprintf(ctx, "Host is %q\n", ctx.Host())
+	fmt.Fprintf(ctx, "Accept is %q\n", ctx.Request.Header.Peek("Accept"))
 	// fmt.Fprintf(ctx, "Query string is %q\n", ctx.QueryArgs())
 	fmt.Fprintf(ctx, "User-Agent is %q\n", ctx.UserAgent())
 
