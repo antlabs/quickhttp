@@ -52,6 +52,14 @@ type RequestHeader struct {
 	bufKV      argsKV //key和value的缓存
 }
 
+func (h *RequestHeader) DisableSpecialHeader() {
+	h.disableSpecialHeader = true
+}
+
+func (h *RequestHeader) EnableSpecialHeader() {
+	h.disableSpecialHeader = false
+}
+
 func (h *RequestHeader) getParentBuf() []byte {
 	return *h.parent.headerAndBody.buf
 }
@@ -69,7 +77,7 @@ func (h *RequestHeader) SetMethodBytes(method []byte) {
 
 func (h *RequestHeader) Host() []byte {
 	if h.disableNormalizing {
-
+		return h.peekBufBytes(bytesHost)
 	}
 	return h.host
 }
@@ -79,6 +87,9 @@ func (h *RequestHeader) Reset() {
 }
 
 func (h *RequestHeader) UserAgent() []byte {
+	if h.disableNormalizing {
+		return h.peekBufBytes(bytesUserAgent)
+	}
 	return h.userAgent
 }
 

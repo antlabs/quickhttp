@@ -599,35 +599,35 @@ func decodeArgAppend(dst, src []byte) []byte {
 //
 // The function is copy-pasted from decodeArgAppend due to the performance
 // reasons only.
-// func decodeArgAppendNoPlus(dst, src []byte) []byte {
-// 	idx := bytes.IndexByte(src, '%')
-// 	if idx < 0 {
-// 		// fast path: src doesn't contain encoded chars
-// 		return append(dst, src...)
-// 	}
-// 	dst = append(dst, src[:idx]...)
+func decodeArgAppendNoPlus(dst, src []byte) []byte {
+	idx := bytes.IndexByte(src, '%')
+	if idx < 0 {
+		// fast path: src doesn't contain encoded chars
+		return append(dst, src...)
+	}
+	dst = append(dst, src[:idx]...)
 
-// 	// slow path
-// 	for i := idx; i < len(src); i++ {
-// 		c := src[i]
-// 		if c == '%' {
-// 			if i+2 >= len(src) {
-// 				return append(dst, src[i:]...)
-// 			}
-// 			x2 := hex2intTable[src[i+2]]
-// 			x1 := hex2intTable[src[i+1]]
-// 			if x1 == 16 || x2 == 16 {
-// 				dst = append(dst, '%')
-// 			} else {
-// 				dst = append(dst, x1<<4|x2)
-// 				i += 2
-// 			}
-// 		} else {
-// 			dst = append(dst, c)
-// 		}
-// 	}
-// 	return dst
-// }
+	// slow path
+	for i := idx; i < len(src); i++ {
+		c := src[i]
+		if c == '%' {
+			if i+2 >= len(src) {
+				return append(dst, src[i:]...)
+			}
+			x2 := hex2intTable[src[i+2]]
+			x1 := hex2intTable[src[i+1]]
+			if x1 == 16 || x2 == 16 {
+				dst = append(dst, '%')
+			} else {
+				dst = append(dst, x1<<4|x2)
+				i += 2
+			}
+		} else {
+			dst = append(dst, c)
+		}
+	}
+	return dst
+}
 
 func peekAllArgBytesToDst(dst [][]byte, h []argsKV, k []byte) [][]byte {
 	for i, n := 0, len(h); i < n; i++ {

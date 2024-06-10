@@ -108,8 +108,8 @@ func (ctx *RequestCtx) Host() []byte {
 	return ctx.Request.Header.Host()
 }
 
-func (ctx *RequestCtx) QueryArgs() []byte {
-	return nil
+func (ctx *RequestCtx) QueryArgs() *Args {
+	return ctx.URI().QueryArgs()
 }
 
 func (ctx *RequestCtx) UserAgent() []byte {
@@ -138,4 +138,8 @@ func (ctx *RequestCtx) reset() {
 	ctx.Request.Reset()
 	ctx.Response.Reset()
 	ctx.parser.Reset()
+}
+
+func (ctx *RequestCtx) URI() *URI {
+	return ctx.Request.URI()
 }

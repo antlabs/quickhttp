@@ -1,9 +1,25 @@
 package quickhttp
 
 var (
-	bytesCRLF               = []byte("\r\n")
-	bytesHTTP11             = []byte("HTTP/1.1")
-	bytesColonSpace         = []byte(": ")
+	bytesSlash                    = []byte("/")
+	bytesSlashSlash               = []byte("//")
+	bytesSlashDotDot              = []byte("/..")
+	bytesSlashDotSlash            = []byte("/./")
+	bytesSlashDotDotSlash         = []byte("/../")
+	bytesBackSlashDotDot          = []byte(`\..`)
+	bytesBackSlashDotBackSlash    = []byte(`\.\`)
+	bytesSlashDotDotBackSlash     = []byte(`/..\`)
+	bytesBackSlashDotDotBackSlash = []byte(`\..\`)
+	bytesCRLF                     = []byte("\r\n")
+	bytesHTTP                     = []byte("http")
+	bytesHTTPS                    = []byte("https")
+	bytesHTTP11                   = []byte("HTTP/1.1")
+	bytesColon                    = []byte(":")
+	bytesColonSlashSlash          = []byte("://")
+	bytesColonSpace               = []byte(": ")
+	bytesCommaSpace               = []byte(", ")
+	bytesGMT                      = []byte("GMT")
+
 	bytesServer             = []byte(HeaderServer)
 	bytesExpect             = []byte(HeaderExpect)
 	bytesConnection         = []byte(HeaderConnection)
