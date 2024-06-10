@@ -35,6 +35,7 @@ func quickHTTPHandler(ctx *quickhttp.RequestCtx) {
 	fmt.Fprintf(ctx, "Accept is %q\n", ctx.Request.Header.Peek("Accept"))
 	fmt.Fprintf(ctx, "Query string is %q\n", ctx.QueryArgs())
 	fmt.Fprintf(ctx, "User-Agent is %q\n", ctx.UserAgent())
+	fmt.Fprintf(ctx, "Your ip is %q\n\n", ctx.RemoteIP())
 
 	ctx.Response.Header.Set("X-My-Header1", "my-header-value")
 	ctx.Response.Header.Set("X-My-Header1", "my-header-value1")
