@@ -20,7 +20,7 @@ var defaultRequestSetting = &httparser.Setting{
 	},
 	URL: func(p *httparser.Parser, buf []byte, pos int) {
 		ctx := p.GetUserData().(*RequestCtx)
-		ctx.Request.Header.requestURI.setPosOrBytes(int32(pos-len(buf)), int32(pos), buf, 64)
+		ctx.Request.Header.requestURI.setPosOrBytes(int32(pos-len(buf)), int32(pos), buf, minBufLimit)
 	},
 	Status: func(p *httparser.Parser, buf []byte, pos int) {
 	},
@@ -37,6 +37,8 @@ var defaultRequestSetting = &httparser.Setting{
 			if bytes.EqualFold(buf, bytesUserAgent) {
 				ctx.Request.Header.hState.set(findUserAgent)
 			}
+		default:
+			appendPair(&ctx.Request.Header.h, buf)
 		}
 	},
 	HeaderValue: func(p *httparser.Parser, buf []byte, pos int) {
@@ -48,6 +50,8 @@ var defaultRequestSetting = &httparser.Setting{
 		} else if ctx.Request.Header.hState.is(findUserAgent) {
 			ctx.Request.Header.userAgent = append(ctx.Request.Header.userAgent[:0], buf...)
 			ctx.Request.Header.hState.clear(findUserAgent)
+		} else {
+			setLastValue(&ctx.Request.Header.h, int32(pos-len(buf)), int32(pos), buf)
 		}
 	},
 	HeadersComplete: func(p *httparser.Parser, pos int) {
@@ -101,7 +105,7 @@ func (ctx *RequestCtx) Path() []byte {
 }
 
 func (ctx *RequestCtx) Host() []byte {
-	return ctx.Request.Header.host
+	return ctx.Request.Header.Host()
 }
 
 func (ctx *RequestCtx) QueryArgs() []byte {
@@ -109,7 +113,7 @@ func (ctx *RequestCtx) QueryArgs() []byte {
 }
 
 func (ctx *RequestCtx) UserAgent() []byte {
-	return ctx.Request.Header.userAgent
+	return ctx.Request.Header.UserAgent()
 }
 
 func (ctx *RequestCtx) RemoteIP() net.IP {

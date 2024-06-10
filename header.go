@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
@@ -34,14 +35,26 @@ func (hs *headerState) is(v headerState) bool {
 }
 
 type RequestHeader struct {
-	parent     *Request
+	parent *Request
+
+	disableNormalizing   bool
+	noHTTP11             bool
+	connectionClose      bool
+	noDefaultContentType bool
+	disableSpecialHeader bool
+
 	method     []byte
 	host       []byte
 	userAgent  []byte
 	hState     headerState
 	requestURI buf[int32] //uri有非常长的情况，所以使用buf结构存储
+	h          []pair
+	bufKV      argsKV //key和value的缓存
 }
 
+func (h *RequestHeader) getParentBuf() []byte {
+	return *h.parent.headerAndBody.buf
+}
 func (h *RequestHeader) setParent(r *Request) {
 	h.parent = r
 }
@@ -54,8 +67,63 @@ func (h *RequestHeader) SetMethodBytes(method []byte) {
 	h.method = append(h.method[:0], method...)
 }
 
+func (h *RequestHeader) Host() []byte {
+	if h.disableNormalizing {
+
+	}
+	return h.host
+}
+
 func (h *RequestHeader) Reset() {
 	h.resetSkipNormalize()
+}
+
+func (h *RequestHeader) UserAgent() []byte {
+	return h.userAgent
+}
+
+func (h *RequestHeader) peek(key []byte) []byte {
+	switch string(key) {
+	case HeaderHost:
+		return h.Host()
+	case HeaderContentType:
+		// return h.ContentType()
+	case HeaderUserAgent:
+		return h.UserAgent()
+	case HeaderConnection:
+		// if h.ConnectionClose() {
+		// 	return strClose
+		// }
+		// return peekArgBytes(h.h, key)
+	case HeaderContentLength:
+		// return h.contentLengthBytes
+	case HeaderCookie:
+		// if h.cookiesCollected {
+		// 	return appendRequestCookieBytes(nil, h.cookies)
+		// }
+		// return peekArgBytes(h.h, key)
+	case HeaderTrailer:
+		// return appendArgsKeyBytes(nil, h.trailer, strCommaSpace)
+	default:
+		return h.peekBufBytes(key)
+	}
+	return nil
+}
+
+func (h *RequestHeader) peekBufBytes(key []byte) []byte {
+
+	pos := slices.IndexFunc(h.h, func(p pair) bool {
+		return bytes.Equal(p.key, key)
+	})
+	if pos == -1 {
+		return nil
+	}
+	return h.h[pos].value.getBytes(h.getParentBuf())
+}
+
+func (h *RequestHeader) Peek(key string) []byte {
+	k := getHeaderKeyBytes(&h.bufKV, key, h.disableNormalizing)
+	return h.peek(k)
 }
 
 func (h *RequestHeader) RequestURI() []byte {

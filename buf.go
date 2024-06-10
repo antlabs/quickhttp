@@ -6,6 +6,8 @@ type Integer interface {
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | uintptr
 }
 
+const minBufLimit = 64
+
 // 减少copy, 如果超过一定大小的数据包，直接引用底层的read buffer
 // 如果是很小的buf，直接copy
 type buf[T Integer] struct {
