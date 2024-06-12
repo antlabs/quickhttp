@@ -13,6 +13,14 @@ type RequestCtx struct {
 	reqSetting *httparser.Setting // 状态回调函数
 	Request    Request            // 请求
 	Response   Response           // 响应
+
+	remoteAddr net.Addr
+
+	c net.Conn
+}
+
+var zeroTCPAddr = &net.TCPAddr{
+	IP: net.IPv4zero,
 }
 
 var defaultRequestSetting = &httparser.Setting{
@@ -55,25 +63,31 @@ var defaultRequestSetting = &httparser.Setting{
 		}
 	},
 	HeadersComplete: func(p *httparser.Parser, pos int) {
-		ctx := p.GetUserData().(*RequestCtx)
 
 		// r.Request.Header.method = append(r.Request.Header.method[:0], p.Method.String()...)
-		ctx.Request.headerAndBody.start = pos + 1
 	},
 	Body: func(p *httparser.Parser, buf []byte, pos int) {
 		ctx := p.GetUserData().(*RequestCtx)
+		if ctx.Request.headerAndBody.start == 0 {
+			ctx.Request.headerAndBody.start = pos - len(buf)
+		}
+
 		ctx.Request.headerAndBody.end = pos
 	},
 	MessageComplete: func(p *httparser.Parser, pos int) {
 		ctx := p.GetUserData().(*RequestCtx)
+		if ctx.Request.headerAndBody.start == 0 {
+			ctx.Request.headerAndBody.start = pos
+		}
 		ctx.Request.headerAndBody.end = pos
 	},
 }
 
-func newRequestCtx() *RequestCtx {
+func newRequestCtx(c net.Conn) *RequestCtx {
 
 	ctx := &RequestCtx{
 		parser: httparser.New(httparser.REQUEST),
+		c:      c,
 		// buffer:  make([]byte, 1024),
 		// request: &http.Request{},
 	}
@@ -83,6 +97,20 @@ func newRequestCtx() *RequestCtx {
 	ctx.reqSetting = defaultRequestSetting
 
 	return ctx
+}
+
+func (ctx *RequestCtx) RemoteAddr() net.Addr {
+	if ctx.remoteAddr != nil {
+		return ctx.remoteAddr
+	}
+	if ctx.c == nil {
+		return zeroTCPAddr
+	}
+	addr := ctx.c.RemoteAddr()
+	if addr == nil {
+		return zeroTCPAddr
+	}
+	return addr
 }
 
 func (ctx *RequestCtx) Method() []byte {
@@ -116,8 +144,16 @@ func (ctx *RequestCtx) UserAgent() []byte {
 	return ctx.Request.Header.UserAgent()
 }
 
+func addrToIP(addr net.Addr) net.IP {
+	x, ok := addr.(*net.TCPAddr)
+	if !ok {
+		return net.IPv4zero
+	}
+	return x.IP
+}
+
 func (ctx *RequestCtx) RemoteIP() net.IP {
-	return nil
+	return addrToIP(ctx.RemoteAddr())
 }
 
 func (ctx *RequestCtx) execute() (bool, error) {

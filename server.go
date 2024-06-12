@@ -14,7 +14,7 @@ type Server struct {
 }
 
 func (s *Server) serve(c net.Conn) {
-	ctx := newRequestCtx()
+	ctx := newRequestCtx(c)
 	defer c.Close()
 
 	ctx.Request.headerAndBody.resetBuf(GetBytes(1024))
@@ -25,6 +25,7 @@ func (s *Server) serve(c net.Conn) {
 			fmt.Printf("%v\n", err)
 			return
 		}
+		fmt.Printf("n = %d\n", n)
 		*buf = (*buf)[:n]
 		sucess, err := ctx.execute()
 		if err != nil {

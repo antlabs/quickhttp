@@ -11,6 +11,7 @@ type Request struct {
 
 func (r *Request) Reset() {
 	r.Header.Reset()
+	r.headerAndBody.reset()
 }
 
 func (req *Request) parseURI() error {
