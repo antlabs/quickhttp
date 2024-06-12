@@ -17,19 +17,27 @@ func (s *Server) serve(c net.Conn) {
 	ctx := newRequestCtx(c)
 	defer c.Close()
 
-	ctx.Request.headerAndBody.resetBuf(GetBytes(1024))
+	try := 1
+	ctx.Request.headerAndBody.resetBuf(GetBytes(poolPage))
 	buf := ctx.Request.headerAndBody.buf
+	pos := 0
 	for {
-		n, err := c.Read(*buf)
+		n, err := c.Read((*buf)[pos:])
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			return
 		}
+
+		if n == 0 {
+			fmt.Printf("find eof\n")
+			return
+		}
+
 		fmt.Printf("n = %d\n", n)
 		*buf = (*buf)[:n]
 		sucess, err := ctx.execute()
 		if err != nil {
-			fmt.Printf("%v\n", err)
+			fmt.Printf("ctx.execute %v\n", err)
 			return
 		}
 		if sucess {
@@ -41,6 +49,16 @@ func (s *Server) serve(c net.Conn) {
 
 			ctx.write(c)
 			ctx.reset()
+			ctx.Request.headerAndBody.resetBuf(GetBytes(poolPage))
+			pos = 0
+			try = 1
+		} else {
+			try *= 2
+			newBuf := GetBytes(poolPage * try)
+			oldBuf := ctx.Request.headerAndBody.getBufPtr()
+			copy(*newBuf, *oldBuf)
+			ctx.Request.headerAndBody.resetBuf(newBuf)
+			pos += n
 		}
 	}
 }

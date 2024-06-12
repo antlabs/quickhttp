@@ -72,14 +72,14 @@ var defaultRequestSetting = &httparser.Setting{
 			ctx.Request.headerAndBody.start = pos - len(buf)
 		}
 
-		ctx.Request.headerAndBody.end = pos
+		ctx.Request.headerAndBody.end = pos + 1
 	},
 	MessageComplete: func(p *httparser.Parser, pos int) {
 		ctx := p.GetUserData().(*RequestCtx)
 		if ctx.Request.headerAndBody.start == 0 {
-			ctx.Request.headerAndBody.start = pos
+			ctx.Request.headerAndBody.start = pos + 1
 		}
-		ctx.Request.headerAndBody.end = pos
+		ctx.Request.headerAndBody.end = pos + 1
 	},
 }
 
@@ -121,6 +121,7 @@ func (ctx *RequestCtx) Method() []byte {
 }
 
 func (ctx *RequestCtx) PostBody() []byte {
+	// fmt.Printf("start = %d, end:%d\n", ctx.Request.headerAndBody.start, ctx.Request.headerAndBody.end)
 	return ctx.Request.headerAndBody.getBytes(nil)
 }
 

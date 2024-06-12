@@ -47,6 +47,10 @@ func (b *buf[T]) setPosOrBytes(start, end T, data []byte, limit int) {
 	b.setPos(start, end)
 }
 
+func (b *buf[T]) getBufPtr() *[]byte {
+	return b.buf
+}
+
 func (b *buf[T]) getBytes(bigBytes []byte) []byte {
 	if b.buf != nil {
 		return (*b.buf)[b.start:b.end]
