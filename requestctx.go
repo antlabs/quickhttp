@@ -113,6 +113,10 @@ func (ctx *RequestCtx) RemoteAddr() net.Addr {
 	return addr
 }
 
+func (ctx *RequestCtx) URI() *URI {
+	return ctx.Request.URI()
+}
+
 func (ctx *RequestCtx) Method() []byte {
 	if len(ctx.Request.Header.method) == 0 {
 		ctx.Request.Header.method = append(ctx.Request.Header.method[:0], ctx.parser.Method.String()...)
@@ -130,7 +134,7 @@ func (ctx *RequestCtx) RequestURI() []byte {
 }
 
 func (ctx *RequestCtx) Path() []byte {
-	return nil
+	return ctx.URI().Path()
 }
 
 func (ctx *RequestCtx) Host() []byte {
@@ -175,8 +179,4 @@ func (ctx *RequestCtx) reset() {
 	ctx.Request.Reset()
 	ctx.Response.Reset()
 	ctx.parser.Reset()
-}
-
-func (ctx *RequestCtx) URI() *URI {
-	return ctx.Request.URI()
 }
