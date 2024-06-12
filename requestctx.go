@@ -58,7 +58,7 @@ var defaultRequestSetting = &httparser.Setting{
 		ctx := p.GetUserData().(*RequestCtx)
 
 		// r.Request.Header.method = append(r.Request.Header.method[:0], p.Method.String()...)
-		ctx.Request.headerAndBody.start = pos
+		ctx.Request.headerAndBody.start = pos + 1
 	},
 	Body: func(p *httparser.Parser, buf []byte, pos int) {
 		ctx := p.GetUserData().(*RequestCtx)

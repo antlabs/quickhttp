@@ -27,6 +27,7 @@ func stdMain() {
 
 // request handler in quickhttp style, i.e. just plain function.
 func quickHTTPHandler(ctx *quickhttp.RequestCtx) {
+	fmt.Fprintf(ctx, "body = (%s)\n", ctx.PostBody())
 	fmt.Fprintf(ctx, "Hello, world!\n\n")
 	fmt.Fprintf(ctx, "Request method is %q\n", ctx.Method())
 	fmt.Fprintf(ctx, "RequestURI is %q\n", ctx.RequestURI())
@@ -39,8 +40,6 @@ func quickHTTPHandler(ctx *quickhttp.RequestCtx) {
 
 	ctx.Response.Header.Set("X-My-Header1", "my-header-value")
 	ctx.Response.Header.Set("X-My-Header1", "my-header-value1")
-	// fmt.Printf("(%s)\n", ctx.PostBody())
-	// fmt.Fprintf(ctx, "Hi there! RequestURI is %q", ctx.RequestURI())
 }
 
 func main() {
